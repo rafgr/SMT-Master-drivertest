@@ -30,9 +30,7 @@
 ;            2.0 1-15-20     This is the new version for the smt board with
 ;			 	 			 surface mount parts AND ALTERNATING BUFFER CHANGED FROM #7 TO #3
 ;
-;			 2.1 10-4-23     Icreased the sioQsize fro 60 h to d0 h		
-;            11/2/2026		 This is the modified master to use on the diode driver
-;			 				 test stand to show scrolling message 	  		 		     	
+;			 2.1 10-4-23     Icreased the sioQsize fro 60 h to d0 h				 		     	
 ;
 ; COPYRIGHT IST 1991 - 2023
 ;
@@ -635,7 +633,8 @@ clkinit:LDA     #10100000Q       ;external clock @ 8.0mhz /2 4 bus clock is / 2 
 	JSR     SERINIT
 	JSR		SERINIT2	   ;fixed line out
 	JSR     TMRINIT
-
+    JSR     TSTINIT		   ;SETUP THE TEST SCROLL MESSAGE
+	
 	BSET    RESET,PTFD    ; Clear reset bit
 
 	LDA     #STX           ; Send reset to remote boards
@@ -647,7 +646,32 @@ clkinit:LDA     #10100000Q       ;external clock @ 8.0mhz /2 4 bus clock is / 2 
 	LDA     #ETX
 	JSR     SIOWRITE
 	CLI
-	RTS	
+	RTS
+;
+; Set up to scroll a message.
+;
+
+TSTINIT:
+
+	LDX     #0
+	STX     IPTR1
+	STX     OPTR1
+
+TSTI1:  LDA     TSTMSG,X
+	STA     SIOQUE,X
+	INCX
+	CPX     #TSTMSGSIZE
+	BNE     TSTI1
+
+	STX     IPTR1
+	BSET    SIOINRDY,FLAG     ; Set data read flag
+	RTS
+
+TSTMSG: FCC    02H,31H
+	FCC     "THE QUICK BROWN FOX JUMPED OVER THE "
+	FCC    "LAZY SLEEPING DOG 0123456789  "
+	DB     03H
+TSTMSGSIZE: EQU 71
 ;
 ; **************************************************************
 ; Turn ON colon
